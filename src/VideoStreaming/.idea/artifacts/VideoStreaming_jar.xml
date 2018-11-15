@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="VideoStreaming:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/VideoStreaming_jar</output-path>
+    <root id="archive" name="VideoStreaming.jar">
+      <element id="module-output" name="VideoStreaming" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/Filters.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/webcam-capture-0.3.12.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/slf4j-api-1.7.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/bridj-0.7.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/slf4j-simple-1.6.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

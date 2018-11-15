@@ -1,0 +1,199 @@
+class Server {
+
+	ArrayList<DataOutputStream> listeners;
+	ServerSocket serverSocket;
+	Socket listener;
+	DataOutputStream dos;
+	Server() {
+		listeners = new ArrayList<>();
+	}
+
+	public void start() {
+		try {
+			serverSocket = new ServerSocket(10001);
+			System.out.println("Server Started");
+			new broadCast().start();
+
+			while (true) {
+				listener = serverSocket.accept();
+				dos = new DataOutputStream(listener.getOutputStream());
+				listeners.add(dos);
+				System.out.println("Connected from [" + listener.getPort() + " : " + listener.getInetAddress() + "]");
+				System.out.println("Current listener : " + listeners.size());
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void sendBack(){
+		DataInputStream dis;
+		AudioFormat format;
+		DataLine.Info info;
+		SourceDataLine speakers = null;
+		try {
+			format = new AudioFormat(44100.0f, 16, 2, true, true);
+			info = new DataLine.Info(SourceDataLine.class, format);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			dis = new DataInputStream(listener.getInputStream());
+
+			int dsize = 0;
+			byte[] data = new byte[1024];
+
+			speakers = (SourceDataLine) AudioSystem.getLine(info);
+			speakers.open(format);
+			speakers.start();
+
+			while(true) {
+				dsize = dis.read(data);
+				speakers.write(data, 0, dsize);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			speakers.drain();
+			speakers.close();
+		}
+	}
+	class broadCast extends Thread{
+		AudioFormat format = new AudioFormat(44100, 16, 2, true, true);
+		TargetDataLine microphone;
+		DataOutputStream lstn;
+
+		@Override
+		public void run() {
+			int dsize;
+			byte[] data = new byte[1024];
+
+			try {
+				microphone = AudioSystem.getTargetDataLine(format);
+				DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+				microphone = (TargetDataLine) AudioSystem.getLine(info);
+				microphone.open(format);
+				data = new byte[1024];
+				microphone.start();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			while (true) {
+				try {
+					dsize = microphone.read(data, 0, 1024);
+
+					int size = listeners.size();
+
+					for (int i = 0; i < size; i++) {
+						lstn = listeners.get(i);
+						lstn.write(data, 0, dsize);
+					}
+				} catch(IOException e) {
+					try {
+						lstn.close();
+						listeners.remove(lstn);
+						System.out.println("Someone Disconnected");
+						System.out.println("Current listener : " + listeners.size());
+					} catch(IOException f) {
+						f.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+}
+
+class Client {
+	Socket socket;
+	DataInputStream dis;
+	AudioFormat format;
+	DataLine.Info info;
+	SourceDataLine speakers;
+	ArrayList<DataOutputStream> listeners;
+	String ips ="";
+	public Client(String ip){
+		this.ips = ip;
+	}
+	public void startSendAudio() {
+		try {
+			format = new AudioFormat(44100.0f, 16, 2, true, true);
+			info = new DataLine.Info(SourceDataLine.class, format);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			socket = new Socket(ips, 10001);
+			dis = new DataInputStream(socket.getInputStream());
+
+			int dsize = 0;
+			byte[] data = new byte[1024];
+
+			speakers = (SourceDataLine) AudioSystem.getLine(info);
+			speakers.open(format);
+			speakers.start();
+
+			while(true) {
+				dsize = dis.read(data);
+				speakers.write(data, 0, dsize);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			speakers.drain();
+			speakers.close();
+		}
+	}
+
+	public void receiveAudio(){
+		try {
+			DataOutputStream dos;
+			new broadCast().start();
+			while (true) {
+				dos = new DataOutputStream(socket.getOutputStream());
+				listeners.add(dos);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	class broadCast extends Thread{
+		AudioFormat format = new AudioFormat(44100, 16, 2, true, true);
+		TargetDataLine microphone;
+		DataOutputStream lstn;
+
+		@Override
+		public void run() {
+			int dsize;
+			byte[] data = new byte[1024];
+
+			try {
+				microphone = AudioSystem.getTargetDataLine(format);
+				DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+				microphone = (TargetDataLine) AudioSystem.getLine(info);
+				microphone.open(format);
+				data = new byte[1024];
+				microphone.start();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			while (true) {
+				try {
+					dsize = microphone.read(data, 0, 1024);
+
+					int size = listeners.size();
+
+					for (int i = 0; i < size; i++) {
+						lstn = listeners.get(i);
+						lstn.write(data, 0, dsize);
+					}
+				} catch(IOException e) {
+					try {
+						lstn.close();
+						listeners.remove(lstn);
+						System.out.println("Someone Disconnected");
+						System.out.println("Current listener : " + listeners.size());
+					} catch(IOException f) {
+						f.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+}
